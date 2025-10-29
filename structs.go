@@ -10,12 +10,14 @@ type Camera struct {
 	Name          string `json:"name"`
 	RTSPURL       string `json:"rtsp_url"`
 	RetentionDays int    `json:"retention_days"`
+	RtspTransport string `json:"rtsp_transport"`
 	Color         string `json:"color"`
 }
 
 type Config struct {
 	ServeAddress  string   `json:"serve_address"`
 	RetentionDays int      `json:"retention_days"`
+	RtspTransport string   `json:"rtsp_transport"`
 	Cameras       []Camera `json:"cameras"`
 	StorageDir    string   `json:"storage_dir"`
 	FfmpegBin     string   `json:"ffmpeg_bin"`
@@ -26,9 +28,11 @@ func (c *Config) Read(path string) error {
 		c.Write(path)
 	}()
 
+	// Defaults
 	c.ServeAddress = ":8181"
-	c.StorageDir = filepath.Join(execDir, "storage")
+	c.StorageDir = filepath.Join(Cwd, "storage")
 	c.RetentionDays = 2
+	c.RtspTransport = "tcp"
 
 	data, err := os.ReadFile(path)
 	if err != nil {

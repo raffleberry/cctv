@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+var Cwd string
 var execDir string
 var logger *slog.Logger
 var DEV = false
@@ -26,19 +27,30 @@ const DateTimeFormat = "2006-01-02_15-04-05"
 
 func init() {
 	var err error
-	execDir, err = os.Getwd()
+
+	execDir, err = os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	logLevel := slog.LevelInfo
+
+	if isGoRun() || os.Getenv("DEV") != "" {
+		DEV = true
+		logLevel = slog.LevelDebug
+	}
+
+	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: DEV, Level: logLevel}))
+
+	Cwd, err = os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
-	logger.Debug("Working Directory: " + execDir)
-	if isGoRun() || os.Getenv("DEV") != "" {
-		DEV = true
-	}
-	logLevel := slog.LevelInfo
+
+	logger.Debug("Working Directory: " + Cwd)
 	if DEV {
 		logLevel = slog.LevelDebug
 	}
-	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: DEV, Level: logLevel}))
 
 }
 

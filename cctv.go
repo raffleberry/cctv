@@ -18,7 +18,7 @@ import (
 var config Config
 
 func main() {
-	configPath := flag.String("config", filepath.Join(execDir, "config.json"), "Path to config file, default: ./config.json")
+	configPath := flag.String("config", filepath.Join(Cwd, "config.json"), "Path to config file, default: ./config.json")
 	flag.Parse()
 
 	err := config.Read(*configPath)
@@ -29,7 +29,7 @@ func main() {
 
 	logger.Debug("Using ", "Config", config)
 
-	if checkFfmpeg() != "" {
+	if checkFfmpeg() == "" {
 		panic("FFmpeg not found")
 	}
 
@@ -40,13 +40,17 @@ func main() {
 	}
 
 	for _, cam := range config.Cameras {
+		if cam.RTSPURL == "" {
+			logger.Info("No Url for camera. Skipping...", "Name", cam.Name)
+			continue
+		}
 		go recordLoop(cam)
 		// go thumbnailPoller(cam)
 	}
 	go storageCleaner()
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /", http.FileServer(http.Dir(filepath.Join(execDir, "ui"))))
+	mux.Handle("GET /", http.FileServer(http.Dir(filepath.Join(Cwd, "ui"))))
 	mux.Handle("GET /videos/", http.StripPrefix("/videos/", http.FileServer(http.Dir(config.StorageDir))))
 	mux.HandleFunc("GET /api/cameras", getCameras)
 	mux.HandleFunc("GET /api/camera/", apiCamera)
@@ -183,23 +187,29 @@ func recordLoop(cam Camera) {
 			logger.Error("Failed to create storage sub-directory", "Error", err)
 			panic(err)
 		}
-		playlistName := fmt.Sprintf("%s.m3u8", now.Format(DateTimeFormat))
-		m3u8 := filepath.Join(dir, playlistName)
-		segmentPattern := filepath.Join(dir, "%04d.mp4")
+		playlistName := now.Format(DateTimeFormat)
+		playlistM3u8 := filepath.Join(dir, playlistName+".m3u8")
+		segmentFileName := filepath.Join(dir, playlistName+".%04d.ts")
+		rtspTransport := config.RtspTransport
+		if cam.RtspTransport != "" {
+			rtspTransport = cam.RtspTransport
+		}
+
 		args := []string{
 			"-i", cam.RTSPURL,
+			"-rtsp_transport", rtspTransport,
 			"-t", strconv.Itoa(int(remaining.Seconds())),
 			"-c:v", "copy",
 			"-an", // remove audio
 			"-f", "hls",
 			"-hls_time", "10", // each segment, 10 second
 			"-hls_list_size", "0",
-			"-hls_segment_filename", segmentPattern,
+			"-hls_segment_filename", segmentFileName,
 		}
 
-		args = append(args, m3u8)
+		args = append(args, playlistM3u8)
 		logger.Info("Record Starting", "Camera", cam.Name, "Date", dateStr,
-			"Segment", segStr, "PlaylistName", m3u8, "FfmpegArgs", args)
+			"Segment", segStr, "PlaylistName", playlistM3u8, "FfmpegArgs", args)
 
 		cmd := exec.Command("ffmpeg", args...)
 		cmd.Stdout = os.Stdout

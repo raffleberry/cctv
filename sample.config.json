@@ -1,7 +1,9 @@
 {
     "serve_address": "127.0.0.1:8181",
     "retention_days": 7,
+    "rtsp_transport": "udp",
     "storage_dir": "/tmp/cctv/",
+    "ffmpeg_bin": "",
     "cameras": [
         {
             "name": "camera1",
