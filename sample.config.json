@@ -1,0 +1,15 @@
+{
+    "serve_address": "127.0.0.1:8181",
+    "retention_days": 7,
+    "storage_dir": "/tmp/cctv/",
+    "cameras": [
+        {
+            "name": "camera1",
+            "url": "rtsp://username:password@ip:port"
+        },
+        {
+            "name": "camera2",
+            "url": "rtsp://username:password@ip:port"
+        }
+    ]
+}
