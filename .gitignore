@@ -1,2 +1,3 @@
-hls/*.ts
-hls/stream.m3u8
+**/*.mp4
+**/*.m3u8
+config.json
