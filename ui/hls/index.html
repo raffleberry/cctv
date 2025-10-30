@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live CCTV Stream</title>
+
+
+    <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet" />
+</head>
+
+<body>
+    <h1>Live CCTV Stream</h1>
+
+    <!-- Video.js Player -->
+    <video id="my-video" class="video-js vjs-default-skin" controls autoplay preload="auto" width="640" height="360"
+        data-setup='{"liveui": true}'>
+        <source src="/hls/stream.m3u8" type="application/x-mpegURL">
+        Your browser does not support the video tag.
+    </video>
+
+    <script src="https://vjs.zencdn.net/8.16.1/video.min.js"></script>
+    <script>
+        var player = videojs('my-video');
+    </script>
+</body>
+
+</html>

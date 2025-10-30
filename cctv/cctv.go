@@ -1,4 +1,4 @@
-package main
+package cctv
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ import (
 
 var config Config
 
-func main() {
+func Start() {
 	configPath := flag.String("config", filepath.Join(Cwd, "config.json"), "Path to config file, default: ./config.json")
 	flag.Parse()
 
