@@ -45,7 +45,6 @@ func Start() {
 			continue
 		}
 		go recordLoop(cam)
-		// go thumbnailPoller(cam)
 	}
 	go storageCleaner()
 
@@ -196,6 +195,8 @@ func recordLoop(cam Camera) {
 		}
 
 		args := []string{
+			"-hide_banner",
+			"-progress", "pipe:1",
 			"-i", cam.RTSPURL,
 			"-rtsp_transport", rtspTransport,
 			"-t", strconv.Itoa(int(remaining.Seconds())),
@@ -214,6 +215,7 @@ func recordLoop(cam Camera) {
 		cmd := exec.Command("ffmpeg", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+
 		err = cmd.Run()
 		if err != nil {
 			logger.Error("Failed to Record", "Camera", cam.Name, "Error", err)

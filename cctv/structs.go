@@ -24,10 +24,6 @@ type Config struct {
 }
 
 func (c *Config) Read(path string) error {
-	defer func() {
-		c.Write(path)
-	}()
-
 	// Defaults
 	c.ServeAddress = ":8181"
 	c.StorageDir = filepath.Join(Cwd, "storage")
@@ -36,6 +32,9 @@ func (c *Config) Read(path string) error {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			c.Write(path)
+		}
 		return err
 	}
 	return json.Unmarshal(data, c)
