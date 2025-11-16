@@ -1,7 +1,6 @@
 package cctv
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -9,9 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -44,127 +41,17 @@ func Start() {
 			logger.Info("No Url for camera. Skipping...", "Name", cam.Name)
 			continue
 		}
-		go recordLoop(cam)
+		// go recordLoop(cam)
 	}
 	go storageCleaner()
 
-	mux := http.NewServeMux()
-	mux.Handle("GET /", http.FileServer(http.Dir(filepath.Join(Cwd, "ui"))))
-	mux.Handle("GET /videos/", http.StripPrefix("/videos/", http.FileServer(http.Dir(config.StorageDir))))
-	mux.HandleFunc("GET /api/cameras", getCameras)
-	mux.HandleFunc("GET /api/camera/", apiCamera)
+	mux := getMux()
 
 	log.Println("Server starting on http://" + config.ServeAddress)
 	err = http.ListenAndServe(config.ServeAddress, mux)
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func apiCamera(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/camera/")
-	parts := strings.Split(path, "/")
-	if len(parts) < 1 {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
-		return
-	}
-	name := parts[0]
-	var cam Camera
-	for _, c := range config.Cameras {
-		if c.Name == name {
-			cam = c
-			break
-		}
-	}
-	if cam.Name == "" {
-		http.NotFound(w, r)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if len(parts) == 1 {
-		// Get available dates and segments
-		avail := getAvailable(name)
-		json.NewEncoder(w).Encode(avail)
-	} else if len(parts) == 4 && parts[3] == "existing_segments" {
-		// Get existing segments for date/seg
-		date := parts[1]
-		seg := parts[2]
-		segs := getExistingSegments(name, date, seg)
-		json.NewEncoder(w).Encode(segs)
-	} else {
-		http.NotFound(w, r)
-	}
-}
-
-func getCameras(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(config.Cameras)
-}
-
-type AvailableDate struct {
-	Date     string   `json:"date"`
-	Segments []string `json:"segments"`
-}
-
-func getAvailable(name string) []AvailableDate {
-	camDir := filepath.Join(config.StorageDir, name)
-	dateEntries, err := os.ReadDir(camDir)
-	if err != nil {
-		return nil
-	}
-	var avail []AvailableDate
-	for _, d := range dateEntries {
-		if !d.IsDir() {
-			continue
-		}
-		dateStr := d.Name()
-		dateDir := filepath.Join(camDir, dateStr)
-		segEntries, err := os.ReadDir(dateDir)
-		if err != nil {
-			continue
-		}
-		var segList []string
-		for _, s := range segEntries {
-			if !s.IsDir() {
-				continue
-			}
-			m3u8 := filepath.Join(dateDir, s.Name(), "stream.m3u8")
-			if _, err := os.Stat(m3u8); err == nil {
-				segList = append(segList, s.Name())
-			}
-		}
-		if len(segList) > 0 {
-			sort.Strings(segList)
-			avail = append(avail, AvailableDate{Date: dateStr, Segments: segList})
-		}
-	}
-	// Sort dates descending
-	sort.Slice(avail, func(i, j int) bool {
-		return avail[i].Date > avail[j].Date
-	})
-	return avail
-}
-
-func getExistingSegments(id, date, seg string) []int {
-	dir := filepath.Join(config.StorageDir, id, date, seg)
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil
-	}
-	var nums []int
-	for _, f := range files {
-		name := f.Name()
-		if strings.HasSuffix(name, ".ts") {
-			numStr := strings.TrimSuffix(name, ".ts")
-			num, err := strconv.Atoi(numStr)
-			if err == nil {
-				nums = append(nums, num)
-			}
-		}
-	}
-	sort.Ints(nums)
-	return nums
 }
 
 func recordLoop(cam Camera) {

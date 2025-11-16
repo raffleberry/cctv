@@ -82,3 +82,8 @@ func getBlockStart(t time.Time) time.Time {
 	blockHour := blockNum * 6
 	return time.Date(year, mon, day, blockHour, 0, 0, 0, t.Location())
 }
+
+func parseM3u8(file string) (Segment, error) {
+	panic("Unimplemented")
+	return Segment{}, nil
+}

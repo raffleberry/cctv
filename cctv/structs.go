@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Camera struct {
@@ -12,6 +13,23 @@ type Camera struct {
 	RetentionDays int    `json:"retention_days"`
 	RtspTransport string `json:"rtsp_transport"`
 	Color         string `json:"color"`
+}
+
+type CamData struct {
+	Date   time.Time `json:"date"`
+	Blocks []Block   `json:"segments"`
+}
+
+type Block struct {
+	Start    int       `json:"start"`
+	End      int       `json:"end"`
+	Segments []Segment `json:"segments"`
+}
+
+type Segment struct {
+	Start       time.Time `json:"start"`
+	End         time.Time `json:"end"`
+	TsFileCount int       `json:"ts_count"`
 }
 
 type Config struct {
