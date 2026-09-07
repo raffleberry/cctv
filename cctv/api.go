@@ -2,6 +2,7 @@ package cctv
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -144,6 +145,7 @@ func apiCamera(w http.ResponseWriter, r *http.Request) {
 
 func getExistingSegments(id, date, seg string) []int {
 	dir := filepath.Join(config.StorageDir, id, date, seg)
+	fmt.Println(dir)
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil
