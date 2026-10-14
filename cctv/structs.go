@@ -32,6 +32,20 @@ type Segment struct {
 	TsFileCount int       `json:"ts_count"`
 }
 
+type PlaylistInfo struct {
+	Name        string  `json:"name"`
+	URL         string  `json:"url"`
+	Start       string  `json:"start"`
+	DurationSec float64 `json:"duration_sec"`
+}
+
+type BlockPresence struct {
+	Block     string   `json:"block"`
+	Present   bool     `json:"present"`
+	TsCount   int      `json:"ts_count"`
+	Playlists []string `json:"playlists"`
+}
+
 type Config struct {
 	ServeAddress  string   `json:"serve_address"`
 	RetentionDays int      `json:"retention_days"`

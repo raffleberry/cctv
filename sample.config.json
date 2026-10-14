@@ -7,11 +7,13 @@
     "cameras": [
         {
             "name": "camera1",
-            "url": "rtsp://username:password@ip:port"
+            "rtsp_url": "rtsp://username:password@ip:port",
+            "color": "#22c55e"
         },
         {
             "name": "camera2",
-            "url": "rtsp://username:password@ip:port"
+            "rtsp_url": "rtsp://username:password@ip:port",
+            "color": "#ef4444"
         }
     ]
 }

@@ -41,9 +41,10 @@ func Start() {
 			logger.Info("No Url for camera. Skipping...", "Name", cam.Name)
 			continue
 		}
-		// go recordLoop(cam)
+		go recordLoop(cam)
 	}
 	go storageCleaner()
+	go reapLiveLoop()
 
 	mux := getMux()
 
@@ -84,11 +85,11 @@ func recordLoop(cam Camera) {
 		args := []string{
 			"-hide_banner",
 			"-progress", "pipe:1",
-			"-i", cam.RTSPURL,
 			"-rtsp_transport", rtspTransport,
+			"-i", cam.RTSPURL,
 			"-t", strconv.Itoa(int(remaining.Seconds())),
 			"-c:v", "copy",
-			"-an", // remove audio
+			"-an", // no audio
 			"-f", "hls",
 			"-hls_time", "10", // each segment, 10 second
 			"-hls_list_size", "0",
@@ -99,20 +100,23 @@ func recordLoop(cam Camera) {
 		logger.Info("Record Starting", "Camera", cam.Name, "Date", dateStr,
 			"Segment", segStr, "PlaylistName", playlistM3u8, "FfmpegArgs", args)
 
-		cmd := exec.Command("ffmpeg", args...)
+		cmd := exec.Command(ffmpegBin(), args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
 		err = cmd.Run()
 		if err != nil {
 			logger.Error("Failed to Record", "Camera", cam.Name, "Error", err)
-			if retriesIdx != len(retryBackoff)-1 {
+			if retriesIdx < len(retryBackoff)-1 {
 				retriesIdx++
 			}
+			next := time.Now().Add(retryBackoff[retriesIdx]).Format(time.DateTime)
+			logger.Info("Record retry", "NextTryAt", next)
+			time.Sleep(retryBackoff[retriesIdx])
+			continue
 		}
-		next := time.Now().Add(retryBackoff[retriesIdx]).Format(time.DateTime)
-		logger.Info("Failed to Start Record - ", "NextTryAt", next)
-		time.Sleep(retryBackoff[retriesIdx])
+		// Block finished cleanly (-t expired); start the next block.
+		retriesIdx = -1
 	}
 }
 

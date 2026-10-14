@@ -84,6 +84,13 @@ func getBlockStart(t time.Time) time.Time {
 }
 
 func parseM3u8(file string) (Segment, error) {
-	panic("Unimplemented")
-	return Segment{}, nil
+	return describePlaylist(file)
+}
+
+// ffmpegBin prefers the configured binary, falling back to PATH.
+func ffmpegBin() string {
+	if config.FfmpegBin != "" {
+		return config.FfmpegBin
+	}
+	return "ffmpeg"
 }

@@ -1,3 +1,6 @@
 **/*.mp4
 **/*.m3u8
 config.json
+storage/
+ui/dist/
+ui/node_modules/
